@@ -1,16 +1,16 @@
 {
-  "name": "net.thewired.bbimporter",
-  "displayName": "Blockbench importer",
-  "version": "0.1.5",
+  "name": "net.thewired.bbimporter.next",
+  "displayName": "BBImporter-Next",
+  "version": "0.0.1",
   "unity": "2021.3",
   "unityRelease": "28f1",
-  "description": "Blockbench importer",
+  "description": "Blockbench importer for next version",
   "category": "Tool",
   "type": "tool",
   "license": "MIT",
   "author": {
-    "name": "yasuo iwakura",
-    "email": "deus@thewired.net",
+    "name": "yasuo iwakura & ljh-yeh",
+    "email": "deus@thewired.net & ljh_yeh@qq.com",
     "url": "thewired.net"
   },
   "keywords": [
