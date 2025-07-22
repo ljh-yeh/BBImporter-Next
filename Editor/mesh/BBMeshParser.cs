@@ -14,11 +14,15 @@ namespace BBImporter
         private readonly List<BBVertex> vertices;
         private readonly Dictionary<int, List<int>> triangles;
         private readonly Vector2 resolution;
+        private readonly List<Vector2> textureResolutions; // uv分辨率
         public bool IsEmpty => vertices.Count <= 0 || triangles.Count <= 0;
-        public BBMeshParser(List<Material> materials, Vector2 resolution)
+
+        public BBMeshParser(List<Material> materials, Vector2 resolution, List<Vector2> textureResolutions)
         {
             this.materials = materials;
             this.resolution = resolution;
+            this.textureResolutions = textureResolutions ?? new List<Vector2>();
+
             textureSizes = new List<Vector2>();
             vertices = new List<BBVertex>();
             triangles = new Dictionary<int, List<int>>();
@@ -34,6 +38,7 @@ namespace BBImporter
                 textureSizes.Add(Vector2.one);
             }
         }
+
         public void AddElement(JToken element)
         {
             var type = element["type"];
@@ -46,6 +51,7 @@ namespace BBImporter
                 ParseMesh(element);
             }
         }
+        
         public GameObject BakeMesh(AssetImportContext ctx, string name, string guid, Vector3 origin)
         {
             var mesh = new Mesh();
@@ -88,17 +94,19 @@ namespace BBImporter
             var origin = bbLocator.position.ReadVector3();
             var rot = bbLocator.rotation.ReadQuaternion();
         }
+
         public void ParseCube(JToken element)
         {
             var bbCube = new BBModelCube(element);
-            bbCube.GetMesh(vertices, triangles, resolution);
+            bbCube.GetMesh(vertices, triangles, textureResolutions);
         }
+        
         public void ParseMesh(JToken element)
         {
             BBMesh bbMesh;
             try
             {
-               bbMesh = element.ToObject<BBMesh>();
+                bbMesh = element.ToObject<BBMesh>();
             }
             catch (Exception e)
             {
@@ -127,7 +135,7 @@ namespace BBImporter
                     Debug.LogWarning($"Found loose edge in {faceEntry.Key}. Blockbench does that.");
                 }
             }
-            
+
             for (int i = startPos; i < vertices.Count; i++)
             {
                 var before = vertices[i];
@@ -144,6 +152,14 @@ namespace BBImporter
                 triangleList = new List<int>();
                 triangles[materialNum] = triangleList;
             }
+
+            // 使用对应纹理的实际分辨率
+            Vector2 actualResolution = resolution;
+            if (textureResolutions.Count > materialNum)
+            {
+                actualResolution = textureResolutions[materialNum];
+            }
+
             for (var i = 2; i >= 0; i--)
             {
                 Vector3 pos = BBModelUtil.ReadVector3(bbMesh.vertices[faceEntry.Value.vertices[i]]);
@@ -151,7 +167,7 @@ namespace BBImporter
                 if (textureSizes.Count > materialNum)
                 {
                     var texSize = textureSizes[materialNum];
-                    uv = BBModelUtil.ReadVector2(faceEntry.Value.uv[faceEntry.Value.vertices[i]]) / resolution;
+                    uv = BBModelUtil.ReadVector2(faceEntry.Value.uv[faceEntry.Value.vertices[i]]) / actualResolution;
                     uv.y = 1 - uv.y;
                 }
                 var vert = new BBVertex(pos, uv);
@@ -206,32 +222,43 @@ namespace BBImporter
             var distance = plane.GetDistanceToPoint(d);
             return distance < 0;
         }
+
         private bool IsCoplanar(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
         {
             var cDot = Vector3.Dot(c - a, c - b);
             var dDot = Vector3.Dot(d - a, d - b);
             return (cDot > 0 && dDot > 0) || (cDot <= 0 && dDot <= 0);
         }
+        
         private BBVertex ReadVertex(BBMesh bbMesh, KeyValuePair<string, BBMeshFace> faceEntry, int index)
         {
             int materialNum = faceEntry.Value.texture;
             Vector3 pos = BBModelUtil.ReadVector3(bbMesh.vertices[faceEntry.Value.vertices[index]]);
             Vector2 uv = Vector2.zero;
+
+            // 使用对应纹理的实际分辨率
+            Vector2 actualResolution = resolution;
+            if (textureResolutions.Count > materialNum)
+            {
+                actualResolution = textureResolutions[materialNum];
+            }
+
             if (textureSizes.Count > materialNum)
             {
                 var texSize = textureSizes[materialNum];
-                uv = BBModelUtil.ReadVector2(faceEntry.Value.uv[faceEntry.Value.vertices[index]]) / resolution;
+                uv = BBModelUtil.ReadVector2(faceEntry.Value.uv[faceEntry.Value.vertices[index]]) / actualResolution;
                 uv.y = 1 - uv.y;
             }
             return new BBVertex(pos, uv);
         }
+        
         private void WriteTriangle(BBVertex aVtx, BBVertex bVtx, BBVertex cVtx, BBVertex dVtx, List<int> triangleList)
         {
             int startVertex = vertices.Count;
             vertices.Add(cVtx);
             vertices.Add(aVtx);
             vertices.Add(bVtx);
-            
+
             var a = aVtx.position;
             var b = bVtx.position;
             var c = cVtx.position;
@@ -251,9 +278,10 @@ namespace BBImporter
             }
             for (int i = 0; i < 6; i++)
             {
-                triangleList.Add(startVertex+i);
+                triangleList.Add(startVertex + i);
             }
         }
+
         Vector3 GetPointOnLine(Vector3 p, Vector3 a, Vector3 b)
         {
             return a + Vector3.Project(p - a, b - a);

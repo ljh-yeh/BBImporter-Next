@@ -27,12 +27,14 @@ namespace BBImporter
             rotation = BBModelUtil.ReadQuaternion(cube.rotation);
             MakeBoxVertices();
         }
-        public void GetMesh(List<BBVertex> vertices, Dictionary<int, List<int>> triangles, Vector2 resolution)
+
+        public void GetMesh(List<BBVertex> vertices, Dictionary<int, List<int>> triangles, List<Vector2> textureResolutions)
         {
             this.DebugDrawVertices();
             foreach (var face in cube.faces)
             {
-                var boxUVs = MakeBoxUVs(face.Key, face.Value.uv, resolution, face.Value.rotation);
+                int index = face.Value.texture;
+                var boxUVs = MakeBoxUVs(face.Key, face.Value.uv, textureResolutions[index], face.Value.rotation);
                 switch (face.Key)
                 {
                     case "north":
@@ -90,6 +92,7 @@ namespace BBImporter
                 list.Add(triIdx);
             }
         }
+
         // Face => TopLeft, BottomLeft, topRight, TopRight, BottomLeft, BottomRight
         private Vector2[] MakeBoxUVs(string faceKey, float[] faceUVs, Vector2 resolution, int rotation)
         {
@@ -104,6 +107,7 @@ namespace BBImporter
                 topLeft, topRight, bottomRight, topLeft, bottomRight, bottomLeft
             };
         }
+
         private void MakeBoxVertices()
         {
             //X
@@ -144,6 +148,7 @@ namespace BBImporter
                 boxVertices[i] = (rotation * (boxVertices[i] - origin)) + origin;
             }
         }
+
         [Conditional("BBIMPORTER_DEBUG")]
         private void DebugDrawVertices()
         {
@@ -156,6 +161,7 @@ namespace BBImporter
             Debug.DrawLine(Vector3.zero, boxVertices[6] * 1.1f, Color.white, 20);
             Debug.DrawLine(Vector3.zero, boxVertices[7] * 1.1f, Color.black, 20);
         }
+
         private static void ApplyRotation(ref Vector2 topLeft, ref Vector2 topRight, ref Vector2 bottomLeft, ref Vector2 bottomRight, int rotation)
         {
             topLeft = Rotate(topLeft, rotation);
@@ -163,13 +169,15 @@ namespace BBImporter
             bottomLeft = Rotate(bottomLeft, rotation);
             bottomRight = Rotate(bottomRight, rotation);
         }
+        
         private static void FlipY(ref Vector2 topLeft, ref Vector2 topRight, ref Vector2 bottomLeft, ref Vector2 bottomRight, int rotation)
         {
-            topLeft.y = 1-topLeft.y;
-            topRight.y = 1-topRight.y;
-            bottomLeft.y = 1-bottomLeft.y;
-            bottomRight.y = 1-bottomRight.y;
+            topLeft.y = 1 - topLeft.y;
+            topRight.y = 1 - topRight.y;
+            bottomLeft.y = 1 - bottomLeft.y;
+            bottomRight.y = 1 - bottomRight.y;
         }
+
         private static void SortComponents(ref Vector3 a, ref Vector3 b)
         {
             if (a.x > b.x)
@@ -191,10 +199,12 @@ namespace BBImporter
                 b.z = tmp;
             }
         }
-        public static Vector2 Rotate(Vector2 v, float degrees) {
+        
+        public static Vector2 Rotate(Vector2 v, float degrees)
+        {
             float sin = Mathf.Sin(degrees * Mathf.Deg2Rad);
             float cos = Mathf.Cos(degrees * Mathf.Deg2Rad);
-         
+
             float tx = v.x;
             float ty = v.y;
             v.x = (cos * tx) - (sin * ty);

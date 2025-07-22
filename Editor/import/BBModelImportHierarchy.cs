@@ -14,16 +14,20 @@ namespace BBImporter
         private readonly string ignoreName;
         private readonly BBMeshParser meshParser;
         private readonly List<Material> materials;
+        private readonly List<Vector2> textureResolutions;
         private Dictionary<string, GameObject> groups;
-        public BBModelImportHierarchy(in Vector2 resolution, bool filterHidden, string ignoreName, List<Material> materials)
+
+        public BBModelImportHierarchy(in Vector2 resolution, bool filterHidden, string ignoreName, List<Material> materials, List<Vector2> textureResolutions = null)
         {
             this.resolution = resolution;
             this.filterHidden = filterHidden;
             this.ignoreName = ignoreName;
             this.materials = materials;
-            this.meshParser = new BBMeshParser(materials, resolution);
+            this.textureResolutions = textureResolutions;
+            this.meshParser = new BBMeshParser(materials, resolution, textureResolutions);
             this.groups = new Dictionary<string, GameObject>();
         }
+
         public void ParseOutline(AssetImportContext ctx, JObject file)
         {
             var guid = file["model_identifier"]?.Value<string>();
@@ -36,6 +40,7 @@ namespace BBImporter
             LoadGroupRecursively(file["outliner"], rootGO, ctx, file);
             LoadAnimations(ctx, file);
         }
+        
         private void LoadGroupRecursively(JToken currentGroup, GameObject parent, AssetImportContext ctx, JObject file)
         {
             foreach (var outline in currentGroup)
@@ -79,6 +84,7 @@ namespace BBImporter
                 }
             }
         }
+        
         private void LoadLocator(JObject file, JToken outline, JToken element, GameObject parent)
         {
             var goName = file["elements"].First(x => x.Value<string>("uuid") == outline.Value<string>()).Value<string>("name");
@@ -87,14 +93,14 @@ namespace BBImporter
             var rotation = element["rotation"]?.Values<float>()?.ToArray().ReadQuaternion();
             var go = new GameObject(goName);
             go.transform.position = (origin ?? Vector3.zero) - parent.transform.position;
-            if (rotation != null) 
+            if (rotation != null)
                 go.transform.rotation = (rotation.Value);
             go.transform.SetParent(parent.transform, false);
         }
 
         private void LoadMesh(JObject file, JToken outline, JToken element, GameObject parent, AssetImportContext ctx, string guid)
         {
-            var mesh = new BBMeshParser(materials, resolution);
+            var mesh = new BBMeshParser(materials, resolution, textureResolutions);
             var origin = element["origin"]?.Values<float>()?.ToArray().ReadVector3();
             var rotation = element["rotation"]?.Values<float>()?.ToArray().ReadQuaternion();
             mesh.AddElement(element);
@@ -103,13 +109,14 @@ namespace BBImporter
             go.transform.position = (origin ?? Vector3.zero) - parent.transform.position;
             go.transform.SetParent(parent.transform, false);
         }
+        
         private void LoadAnimations(AssetImportContext ctx, JObject obj)
         {
             var animToken = obj["animations"];
             if (animToken is { HasValues: true })
             {
                 var mainGO = ctx.mainObject as GameObject;
-                Animation animation = null; 
+                Animation animation = null;
                 if (mainGO != null)
                     animation = mainGO.AddComponent<Animation>();
                 foreach (var token in obj["animations"])
@@ -117,7 +124,7 @@ namespace BBImporter
                     var anim = token.ToObject<BBAnimation>();
                     var clip = anim.ToClip(this.groups);
                     ctx.AddObjectToAsset(anim.name, clip);
-                    if (animation != null) 
+                    if (animation != null)
                         animation.AddClip(clip, clip.name);
                 }
             }

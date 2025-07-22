@@ -13,12 +13,12 @@ namespace BBImporter
         private readonly bool filterHidden;
         private readonly string ignoreName;
         private readonly BBMeshParser meshParser;
-        public BBModelImportMerged(in Vector2 resolution, bool filterHidden, string ignoreName, List<Material> material)
+        public BBModelImportMerged(in Vector2 resolution, bool filterHidden, string ignoreName, List<Material> material, List<Vector2> textureResolutions = null)
         {
             this.resolution = resolution;
             this.filterHidden = filterHidden;
             this.ignoreName = ignoreName;
-            this.meshParser = new BBMeshParser(material, resolution);
+            this.meshParser = new BBMeshParser(material, resolution, textureResolutions);
         }
         public void ParseOutline(AssetImportContext ctx, JObject file)
         {
