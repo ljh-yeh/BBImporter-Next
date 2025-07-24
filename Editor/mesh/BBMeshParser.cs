@@ -114,7 +114,7 @@ namespace BBImporter
                 return;
             }
             var origin = bbMesh.origin.ReadVector3();
-            var rot = bbMesh.rotation.ReadQuaternion();
+            var rot = bbMesh.rotation.ReadQuaternion(true);
             Matrix4x4 orientation = Matrix4x4.TRS(origin, rot, Vector3.one);
             var startPos = vertices.Count;
             //Fix visibility
@@ -294,9 +294,9 @@ namespace BBImporter
         {
             return BBModelUtil.ReadVector3(arr);
         }
-        public static Quaternion ReadQuaternion(this float[] arr)
+        public static Quaternion ReadQuaternion(this float[] arr, bool isMesh = false)
         {
-            return BBModelUtil.ReadQuaternion(arr);
+            return BBModelUtil.ReadQuaternion(arr, isMesh);
         }
     }
 }

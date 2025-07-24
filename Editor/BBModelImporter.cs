@@ -18,11 +18,10 @@ namespace BBImporter
 
         private static readonly int Metallic = Shader.PropertyToID("_Metallic");
         private static readonly int Smoothness = Shader.PropertyToID("_Glossiness");
-
         // 纹理的uv分辨率
         private List<Vector2> textureResolutions = new List<Vector2>();
-
         private Vector2 Resolution;
+
         public override void OnImportAsset(AssetImportContext ctx)
         {
             //var basePath = Path.GetDirectoryName(ctx.assetPath) + "/" + Path.GetFileNameWithoutExtension(ctx.assetPath);

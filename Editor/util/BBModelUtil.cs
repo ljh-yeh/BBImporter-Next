@@ -23,18 +23,33 @@ namespace BBImporter
             ret.z = -arr[2];
             return ret;
         }
-        internal static Quaternion ReadQuaternion(float[] arr)
+
+        internal static Quaternion ReadQuaternion(float[] arr, bool isMesh = false)
         {
             if (arr == null) return Quaternion.identity;
-            //return Quaternion.Euler(arr[0], -arr[1], -arr[2]);
-            return Quaternion.Euler(-arr[0], arr[1], arr[2]);
+
+            // return Quaternion.Euler(arr[0], -arr[1], -arr[2]);
+            // return Quaternion.Euler(-arr[0], -arr[1], arr[2]);
+
+            // 计算XYZ轴的旋转（blockbench使用xyz旋转，unity使用zxy旋转）
+            Quaternion qx = Quaternion.AngleAxis(-arr[0], Vector3.right);
+            Quaternion qy = Quaternion.AngleAxis(-arr[1], Vector3.up);
+            Quaternion qz = Quaternion.AngleAxis(arr[2], Vector3.forward);
+            if (isMesh)
+            {
+                // 按照zyx顺序旋转
+                return qx * qy * qz;
+            }
+            // 按照xyz顺序旋转
+            return qz * qy * qx;
         }
+        
         internal static Vector2 ReadVector2(float?[] arr)
         {
             var ret = new Vector2();
             Debug.Assert(arr.Length == 2);
-            ret.x = arr[0].HasValue?arr[0].Value:0;
-            ret.y = arr[1].HasValue?arr[1].Value:0;
+            ret.x = arr[0].HasValue ? arr[0].Value : 0;
+            ret.y = arr[1].HasValue ? arr[1].Value : 0;
             return ret;
         }
     }

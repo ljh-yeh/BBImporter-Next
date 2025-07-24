@@ -102,7 +102,7 @@ namespace BBImporter
         {
             var mesh = new BBMeshParser(materials, resolution, textureResolutions);
             var origin = element["origin"]?.Values<float>()?.ToArray().ReadVector3();
-            var rotation = element["rotation"]?.Values<float>()?.ToArray().ReadQuaternion();
+            var rotation = element["rotation"]?.Values<float>()?.ToArray().ReadQuaternion(true);
             mesh.AddElement(element);
             var goName = file["elements"].First(x => x.Value<string>("uuid") == outline.Value<string>()).Value<string>("name");
             var go = mesh.BakeMesh(ctx, goName, guid, origin ?? Vector3.zero);
