@@ -15,9 +15,11 @@ namespace BBImporter
         private float inflate;
         private Quaternion rotation;
         private Vector3[] boxVertices = new Vector3[8];
+        private readonly bool merged; // 是否是合并mesh的操作
 
-        public BBModelCube(JToken element)
+        public BBModelCube(JToken element, bool merged = false)
         {
+            this.merged = merged;
             cube = element.ToObject<BBCube>();
             from = BBModelUtil.ReadVector3(cube.from);
             to = BBModelUtil.ReadVector3(cube.to);
@@ -141,11 +143,15 @@ namespace BBImporter
             boxVertices[2].z = to[2] + inflate;
             boxVertices[5].z = to[2] + inflate;
             boxVertices[7].z = to[2] + inflate;
-            for (var i = 0;
-                i < boxVertices.Length;
-                i++)
+
+            // 如果是分离模型结构，则生成mesh时不考虑旋转，而是在GameObject处做旋转
+            // 如果是合并为一个mesh，则需要计算旋转，因为只有一个GameObject
+            if (merged)
             {
-                boxVertices[i] = (rotation * (boxVertices[i] - origin)) + origin;
+                for (var i = 0; i < boxVertices.Length; i++)
+                {
+                    boxVertices[i] = (rotation * (boxVertices[i] - origin)) + origin;
+                }
             }
         }
 

@@ -7,19 +7,24 @@ using Newtonsoft.Json.Linq;
 
 namespace BBImporter
 {
+    /// <summary>
+    /// 导入模型时，合并为单个mesh
+    /// </summary>
     public class BBModelImportMerged : IBBMeshImporter
     {
         private readonly Vector2 resolution;
         private readonly bool filterHidden;
         private readonly string ignoreName;
         private readonly BBMeshParser meshParser;
+
         public BBModelImportMerged(in Vector2 resolution, bool filterHidden, string ignoreName, List<Material> material, List<Vector2> textureResolutions = null)
         {
             this.resolution = resolution;
             this.filterHidden = filterHidden;
             this.ignoreName = ignoreName;
-            this.meshParser = new BBMeshParser(material, resolution, textureResolutions);
+            this.meshParser = new BBMeshParser(material, resolution, textureResolutions, true);
         }
+
         public void ParseOutline(AssetImportContext ctx, JObject file)
         {
             ParseRecursive(file["outliner"], file);
@@ -31,6 +36,7 @@ namespace BBImporter
             ctx.AddObjectToAsset(guid, go);
             ctx.SetMainObject(go);
         }
+
         private void ParseRecursive(JToken currentGroup, JObject file)
         {
             foreach (var entry in currentGroup)
@@ -56,6 +62,7 @@ namespace BBImporter
                 }
             }
         }
+
         private void ParseElement(JToken element)
         {
             var type = element["type"].Value<string>();
@@ -68,7 +75,6 @@ namespace BBImporter
                     meshParser.ParseMesh(element);
                     break;
                 case "locator":
-                    
                     break;
             }
         }

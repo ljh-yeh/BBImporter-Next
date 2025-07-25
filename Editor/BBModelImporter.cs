@@ -152,7 +152,7 @@ namespace BBImporter
         [Tooltip("将所有几何体合并为一个Mesh对象，适用于静态装饰物和性能优化场景")]
         MergeAllIntoOneObject,
 
-        [InspectorName("分离对象")]
+        [InspectorName("分离对象（有BUG）")]
         [Tooltip("每个元素创建独立的GameObject，便于单独控制各个部分")]
         SeparateObjects,
     }

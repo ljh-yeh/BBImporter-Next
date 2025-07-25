@@ -8,6 +8,9 @@ using System.Linq;
 
 namespace BBImporter
 {
+    /// <summary>
+    /// 导入模型时，分离对象
+    /// </summary>
     public class BBModelImportSeparate : IBBMeshImporter
     {
         private readonly Vector2 resolution;

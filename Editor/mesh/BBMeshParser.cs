@@ -15,13 +15,15 @@ namespace BBImporter
         private readonly Dictionary<int, List<int>> triangles;
         private readonly Vector2 resolution;
         private readonly List<Vector2> textureResolutions; // uv分辨率
+        private readonly bool merged; // 是否是合并mesh的操作
         public bool IsEmpty => vertices.Count <= 0 || triangles.Count <= 0;
 
-        public BBMeshParser(List<Material> materials, Vector2 resolution, List<Vector2> textureResolutions)
+        public BBMeshParser(List<Material> materials, Vector2 resolution, List<Vector2> textureResolutions, bool merged = false)
         {
             this.materials = materials;
             this.resolution = resolution;
             this.textureResolutions = textureResolutions ?? new List<Vector2>();
+            this.merged = merged;
 
             textureSizes = new List<Vector2>();
             vertices = new List<BBVertex>();
@@ -52,13 +54,18 @@ namespace BBImporter
             }
         }
         
+        /// <summary>
+        /// 根据vertices的内容，生成mesh
+        /// </summary>
         public GameObject BakeMesh(AssetImportContext ctx, string name, string guid, Vector3 origin)
         {
-            var mesh = new Mesh();
-            mesh.name = name = name.Replace("/", ".");
-            mesh.vertices = vertices.Select(x => x.position - origin).ToArray();
-            mesh.uv = vertices.Select(x => x.uv).ToArray();
-            mesh.subMeshCount = triangles.Count;
+            var mesh = new Mesh
+            {
+                name = name = name.Replace("/", "."),
+                vertices = vertices.Select(x => x.position - origin).ToArray(),
+                uv = vertices.Select(x => x.uv).ToArray(),
+                subMeshCount = triangles.Count
+            };
             int count = 0;
             foreach (var submesh in triangles.OrderBy(x => x.Key))
             {
@@ -67,8 +74,10 @@ namespace BBImporter
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
             ctx.AddObjectToAsset(guid, mesh);
-            GameObject go = new GameObject();
-            go.name = name;
+            GameObject go = new()
+            {
+                name = name
+            };
             var filter = go.AddComponent<MeshFilter>();
             var renderer = go.AddComponent<MeshRenderer>();
             filter.sharedMesh = mesh;
@@ -79,6 +88,7 @@ namespace BBImporter
             //ctx.AddObjectToAsset(name, go);
             return go;
         }
+
         private void ParseLocator(JToken element)
         {
             BBLocator bbLocator;
@@ -97,7 +107,7 @@ namespace BBImporter
 
         public void ParseCube(JToken element)
         {
-            var bbCube = new BBModelCube(element);
+            var bbCube = new BBModelCube(element, merged);
             bbCube.GetMesh(vertices, triangles, textureResolutions);
         }
         
@@ -114,7 +124,13 @@ namespace BBImporter
                 return;
             }
             var origin = bbMesh.origin.ReadVector3();
-            var rot = bbMesh.rotation.ReadQuaternion(true);
+            // 如果是分离模型结构，则生成mesh时不考虑旋转，而是在GameObject处做旋转
+            // 如果是合并为一个mesh，则需要计算旋转，因为只有一个GameObject
+            var rot = Quaternion.identity;
+            if (merged)
+            {
+                rot = bbMesh.rotation.ReadQuaternion(true);
+            }
             Matrix4x4 orientation = Matrix4x4.TRS(origin, rot, Vector3.one);
             var startPos = vertices.Count;
             //Fix visibility
