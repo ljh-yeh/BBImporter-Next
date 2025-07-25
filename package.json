@@ -1,7 +1,7 @@
 {
   "name": "net.thewired.bbimporter.next",
   "displayName": "BBImporter-Next",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "unity": "2021.3",
   "unityRelease": "28f1",
   "description": "Blockbench importer for next version",
